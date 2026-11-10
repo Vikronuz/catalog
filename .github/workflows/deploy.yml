@@ -1,0 +1,33 @@
+name: Deploy catalog
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.d.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unzip catalog
+        run: |
+          mkdir site
+          unzip -q KochChemie_Telegram_catalog_app.zip -d site
+          if [ ! -f site/index.html ]; then d=$(dirname $(find site -name index.html | head -1)); cp -r "$d"/. site/; fi
+          touch site/.nojekyll
+          ls site | head
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: d
+        uses: actions/deploy-pages@v4
